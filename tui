@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# DeepSeek Harness TUI launcher.
+# Usage: ./tui [--url http://127.0.0.1:43120] [--cwd /path] [--preset standard]
+#             [--session <id>] [--once "<message>"] [--list] [--dump <file>]
+set -euo pipefail
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec node "$DIR/client/index.js" "$@"

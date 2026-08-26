@@ -1,0 +1,11 @@
+{
+  "name": "dsh-tui-bridge",
+  "version": "0.1.0",
+  "description": "Expose the DeepSeek Harness agent loop over SSE+POST so a terminal TUI client can create/resume sessions, send messages, interrupt, and stream agent events.",
+  "type": "module",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*"
+  }
+}
