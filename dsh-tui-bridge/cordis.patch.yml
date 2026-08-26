@@ -1,0 +1,6 @@
+# dsh-tui-bridge bundle patch: insert the bridge row into the host composition.
+# Applied automatically when the package is installed via
+# `dsh plugin --profile <name> add link:./dsh-tui-bridge`.
+- insert:
+    - id: tui-bridge
+      name: 'dsh-tui-bridge'

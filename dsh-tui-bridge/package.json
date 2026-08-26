@@ -5,6 +5,11 @@
   "type": "module",
   "main": "lib/index.js",
   "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*"
   }

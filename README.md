@@ -4,7 +4,7 @@
 
 架构上分两块：
 
-- **桥接插件 `dsh-tui-bridge`**：Harness 的 Host 侧插件，把 agent loop 通过 HTTP（SSE + POST）暴露给终端客户端。**已固化**进 desktop profile 的 Host 组合。
+- **桥接插件 `dsh-tui-bridge/`**：Harness 的 Host 侧插件，把 agent loop 通过 HTTP（SSE + POST）暴露给终端客户端。
 - **TUI 客户端 `client/`**：零依赖的 Node 终端界面，连接桥接插件，建会话、发消息、流式渲染回复、跑工具。
 
 ```
@@ -15,17 +15,37 @@
 ## 依赖
 
 - Node.js ≥ 18（客户端零 npm 依赖，只用内置模块）
-- 一个运行中的 DeepSeek Harness（desktop profile，桥接插件已固化其中）
+- 一个运行中的 DeepSeek Harness，且桥接插件已安装（见下）
+
+## 安装桥接插件（在你的 Harness 上）
+
+clone 仓库后，在仓库目录里执行一条命令，把桥接插件装进你的 profile。它会**自动注册为 bundle 层**并应用 `insert` 行，无需手动改组合文件：
+
+```bash
+dsh plugin --profile <你的profile名> add "link:./dsh-tui-bridge"
+```
+
+例如你的 profile 叫 `desktop`：
+
+```bash
+dsh plugin --profile desktop add "link:./dsh-tui-bridge"
+```
+
+然后**重启 Harness** 生效。
+
+> 桥接插件暴露两个端点：
+> - `GET /tui/events` — SSE 流（server → client）
+> - `POST /tui/command` — JSON 命令（client → server）
+>
+> 命令：`ping` / `list_sessions` / `read_session` / `create_session` / `resume` / `send` / `interrupt` / `subscribe` / `unsubscribe`。
 
 ## 快速开始
 
-在终端里运行：
-
 ```bash
 # 交互式 TUI（默认连 http://127.0.0.1:43120，新建会话，cwd 取当前目录）
-node client/index.js
-# 或
 ./tui
+# 或
+node client/index.js
 
 # 指定工作目录 / preset / 已有会话
 ./tui --cwd /path/to/project --preset standard
@@ -48,28 +68,16 @@ node client/index.js
 | `Ctrl+L` | 重绘画面 |
 | `Ctrl+C` | 退出 |
 
-## 桥接插件（已固化）
-
-桥接插件是一个 Host 平面插件，暴露：
-
-- `GET /tui/events` — SSE 流（server → client）
-- `POST /tui/command` — JSON 命令（client → server）
-
-命令：`ping` / `list_sessions` / `read_session` / `create_session` / `resume` / `send` / `interrupt` / `subscribe` / `unsubscribe`。
-
-固化方式：插件包 `dsh-tui-bridge/` 通过 `link:` 装进 desktop profile，并在用户补丁层
-`~/.dsh/profiles/desktop/cordis.patch.yml` 加了 `insert` 行。**重启 Harness 后生效**（重启前，当前进程里仍是等价的动态插件在跑）。
-
-> 重新固化 / 改桥接源码后：编辑 `dsh-tui-bridge/lib/index.js` 即可（`link:` 指向源码，改动即时生效），然后重启 Harness。
-
 ## 目录
 
 ```
-TUI/
-├── client/index.js      # TUI 客户端（零依赖 Node）
-├── dsh-tui-bridge/      # 桥接插件包（Cordis Host 插件，已固化进 profile）
-│   ├── package.json
-│   └── lib/index.js
-├── tui                  # 启动器（等价于 node client/index.js）
+deepseek-harness-tui/
+├── client/index.js       # TUI 客户端（零依赖 Node）
+├── dsh-tui-bridge/       # 桥接插件包（Cordis Host 插件）
+│   ├── package.json      #   声明 dsh.bundle，安装时自动注册
+│   ├── cordis.patch.yml  #   insert 行
+│   └── lib/index.js      #   插件源码（apply）
+├── tui                   # 启动器（等价于 node client/index.js）
+├── LICENSE
 └── README.md
 ```
