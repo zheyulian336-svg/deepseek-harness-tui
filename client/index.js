@@ -255,12 +255,16 @@ function frameRows() {
 
 function paint() {
   const rows = frameRows()
+  const width = WIDTH()
+  const prompt = '❯ ' + state.input
+  const shown = prompt.length > width - 4 ? prompt.slice(-(width - 4)) : prompt
   // hide cursor, home, draw
   let out = '\x1b[?25l\x1b[H'
   out += rows.join('\r\n') + '\r\n'
-  // reposition cursor into the input line (near the typed text)
-  const inputRow = rows.length - 2 // second-to-last row is the prompt row
-  out += '\x1b[' + inputRow + ';' + (3 + state.input.length + 1) + 'H'
+  // Position the cursor at the end of the visible input on the prompt row:
+  //   row   = rows.length - 1 (ANSI is 1-based; prompt is the 2nd-to-last row)
+  //   col   = 3 + shown.length ('│ ' is 2 chars, so shown starts at col 3)
+  out += '\x1b[' + (rows.length - 1) + ';' + (3 + shown.length) + 'H'
   out += '\x1b[?25h'
   process.stdout.write(out)
 }
