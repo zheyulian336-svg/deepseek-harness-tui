@@ -86,9 +86,8 @@ const state = {
   cwd: CWD,
   connected: false,
   status: 'idle',
-  items: [],          // committed history: { kind: 'user'|'assistant'|'reasoning'|'tool'|'error'|'system', text, name?, status? }
+  items: [],          // committed history: { kind: 'user'|'assistant'|'reasoning'|'tool'|'error'|'system', text, callId?, status? }
   live: { reasoning: '', text: '' },
-  tools: [],
   input: '',
   replaying: false
 }
@@ -166,18 +165,17 @@ function handleEvent(ev) {
       break
     }
     case 'tool/call': {
-      state.tools.push({ callId: d.callId, name: d.name, status: 'running' })
+      pushItem('tool', d.name, { callId: d.callId, status: 'running' })
       break
     }
     case 'tool/result': {
       const callId = d && d.message && d.message.source && d.message.source.callId
-      const t = state.tools.find((x) => x.callId === callId)
-      if (t) t.status = 'done'
+      const item = state.items.findLast((x) => x.kind === 'tool' && x.callId === callId)
+      if (item) item.status = 'done'
       break
     }
     case 'turn/end': {
       commitLive()
-      state.tools = []
       break
     }
     case 'session/title': {
@@ -229,17 +227,18 @@ function frameRows() {
     lines.push('')
   }
   for (const item of state.items) {
-    const prefix = item.kind === 'user' ? 'you   › ' : item.kind === 'reasoning' ? 'agent › (reasoning) ' : item.kind === 'tool' ? '⚙ ' : item.kind === 'error' ? '✗ ' : 'agent › '
+    if (item.kind === 'tool') {
+      const mark = item.status === 'done' ? '✔' : '…'
+      lines.push(`${mark} ${item.text}  [${item.status}]`)
+      lines.push('')
+      continue
+    }
+    const prefix = item.kind === 'user' ? 'you   › ' : item.kind === 'reasoning' ? 'agent › (reasoning) ' : item.kind === 'error' ? '✗ ' : 'agent › '
     pushBlock(prefix, item.text)
   }
   // live streaming
   if (state.live.reasoning) pushBlock('agent › (reasoning) ', state.live.reasoning)
   if (state.live.text) pushBlock('agent › ', state.live.text)
-  // live tools
-  for (const t of state.tools) {
-    const mark = t.status === 'done' ? '✔' : '…'
-    lines.push(`${mark} ${t.name}  [${t.status}]`)
-  }
 
   // take the tail of lines that fit
   const visible = lines.slice(-bodyHeight)
